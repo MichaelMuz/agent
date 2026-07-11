@@ -5,6 +5,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+.oauth-credentials.json
 
 # Build and test output
 coverage/

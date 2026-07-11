@@ -7,16 +7,34 @@ import {
 } from '@earendil-works/pi-ai/oauth';
 
 const OPENAI_CODEX = 'openai-codex';
+const CREDENTIALS_PATH = '.oauth-credentials.json';
 
-// One-time headless login. Persist these later; for now we re-login every run.
-const credentials: Record<string, OAuthCredentials> = {};
-credentials[OPENAI_CODEX] = await loginOpenAICodexDeviceCode({
-  onDeviceCode: (info) => {
-    console.log(
-      `Open ${info.verificationUri} and enter code ${info.userCode} (expires in ${info.expiresInSeconds}s)`
-    );
-  },
-});
+async function loadCredentials(): Promise<Record<string, OAuthCredentials>> {
+  const file = Bun.file(CREDENTIALS_PATH);
+  if (!(await file.exists())) return {};
+  const parsed: unknown = await file.json();
+  // shallow boundary check; trusting our own file's shape for now
+  if (parsed === null || typeof parsed !== 'object') return {};
+  return parsed as Record<string, OAuthCredentials>;
+}
+
+async function saveCredentials(
+  creds: Record<string, OAuthCredentials>
+): Promise<void> {
+  await Bun.write(CREDENTIALS_PATH, JSON.stringify(creds, null, 2));
+}
+
+const credentials = await loadCredentials();
+if (!credentials[OPENAI_CODEX]) {
+  credentials[OPENAI_CODEX] = await loginOpenAICodexDeviceCode({
+    onDeviceCode: (info) => {
+      console.log(
+        `Open ${info.verificationUri} and enter code ${info.userCode} (expires in ${info.expiresInSeconds}s)`
+      );
+    },
+  });
+  await saveCredentials(credentials);
+}
 
 const agent = new Agent({
   // Initial state
@@ -66,8 +84,9 @@ const agent = new Agent({
     if (provider !== OPENAI_CODEX) return undefined;
     const result = await getOAuthApiKey(provider, credentials);
     if (!result) return undefined;
-    // getOAuthApiKey refreshes an expired token; keep the map current
+    // getOAuthApiKey refreshes an expired token; persist the rotation
     credentials[provider] = result.newCredentials;
+    await saveCredentials(credentials);
     return result.apiKey;
   },
 
