@@ -1,40 +1,8 @@
 import { Agent } from '@earendil-works/pi-agent-core';
 import { getBuiltinModel } from '@earendil-works/pi-ai/providers/all';
-import {
-  getOAuthApiKey,
-  loginOpenAICodexDeviceCode,
-  type OAuthCredentials,
-} from '@earendil-works/pi-ai/oauth';
+import { initAuth, getFreshOauth } from './env-context.ts';
 
-const OPENAI_CODEX = 'openai-codex';
-const CREDENTIALS_PATH = '.oauth-credentials.json';
-
-async function loadCredentials(): Promise<Record<string, OAuthCredentials>> {
-  const file = Bun.file(CREDENTIALS_PATH);
-  if (!(await file.exists())) return {};
-  const parsed: unknown = await file.json();
-  // shallow boundary check; trusting our own file's shape for now
-  if (parsed === null || typeof parsed !== 'object') return {};
-  return parsed as Record<string, OAuthCredentials>;
-}
-
-async function saveCredentials(
-  creds: Record<string, OAuthCredentials>
-): Promise<void> {
-  await Bun.write(CREDENTIALS_PATH, JSON.stringify(creds, null, 2));
-}
-
-const credentials = await loadCredentials();
-if (!credentials[OPENAI_CODEX]) {
-  credentials[OPENAI_CODEX] = await loginOpenAICodexDeviceCode({
-    onDeviceCode: (info) => {
-      console.log(
-        `Open ${info.verificationUri} and enter code ${info.userCode} (expires in ${info.expiresInSeconds}s)`
-      );
-    },
-  });
-  await saveCredentials(credentials);
-}
+await initAuth();
 
 const agent = new Agent({
   // Initial state
@@ -49,7 +17,7 @@ const agent = new Agent({
 
   // Convert AgentMessage[] to LLM Message[] (required for custom message types)
   convertToLlm: (messages) => {
-    console.debug(`Asked to convert ${messages}`);
+    console.debug('convertToLlm — messages:', messages);
     // copied from unexported defaultConvertToLlm;
     return messages.filter(
       (message) =>
@@ -62,7 +30,10 @@ const agent = new Agent({
   // Transform context before convertToLlm (for pruning, compaction)
   transformContext: async (messages, abortSignal) => {
     console.debug(
-      `Asked to convert ${messages} with the abort signal ${abortSignal}`
+      'transformContext — messages:',
+      messages,
+      'signal:',
+      abortSignal
     );
     return messages;
   },
@@ -80,15 +51,7 @@ const agent = new Agent({
   sessionId: crypto.randomUUID(),
 
   // Dynamic API key resolution (for expiring OAuth tokens)
-  getApiKey: async (provider) => {
-    if (provider !== OPENAI_CODEX) return undefined;
-    const result = await getOAuthApiKey(provider, credentials);
-    if (!result) return undefined;
-    // getOAuthApiKey refreshes an expired token; persist the rotation
-    credentials[provider] = result.newCredentials;
-    await saveCredentials(credentials);
-    return result.apiKey;
-  },
+  getApiKey: getFreshOauth,
 
   // Tool execution mode: "parallel" (default) or "sequential"
   toolExecution: 'parallel',
@@ -96,7 +59,12 @@ const agent = new Agent({
   // Preflight each tool call after args are validated. Can block execution.
   beforeToolCall: async ({ toolCall, args, context }) => {
     console.debug(
-      `Before tool call ${toolCall} with args ${args} and context ${context}`
+      'beforeToolCall — call:',
+      toolCall,
+      'args:',
+      args,
+      'context:',
+      context
     );
     // can also optionally block the tool call with some reason
     return {};
@@ -105,9 +73,23 @@ const agent = new Agent({
   // Postprocess each tool result before final tool events are emitted.
   afterToolCall: async ({ toolCall, result, isError, context }) => {
     console.debug(
-      `after tool call ${toolCall} with result ${result}, isError ${isError} and context ${context}`
+      'afterToolCall — call:',
+      toolCall,
+      'result:',
+      result,
+      'isError:',
+      isError,
+      'context:',
+      context
     );
     // overwrite none of the passed args
     return {};
   },
 });
+
+agent.subscribe((event) => {
+  if (event.type == 'message_end') {
+    console.debug('message_end:', event.message);
+  }
+});
+agent.prompt('Hello, how are you doing?');
