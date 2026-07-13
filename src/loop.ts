@@ -6,7 +6,7 @@ import type { UserMessage } from '@earendil-works/pi-ai';
 // a UserIO that will accept the model output and provide user input
 // an agent that it will call the interface of with the given client io
 
-type UserIO = {
+export type UserIO = {
   getUserInput: () => Promise<string>;
   pushModelOutput: (output: string) => Promise<void>;
 };
@@ -126,15 +126,3 @@ export class Loop {
     unsubscribe();
   }
 }
-
-// prompt("Hello")
-// ├─ agent_start
-// ├─ turn_start
-// ├─ message_start   { message: userMessage }      // Your prompt
-// ├─ message_end     { message: userMessage }
-// ├─ message_start   { message: assistantMessage } // LLM starts responding
-// ├─ message_update  { message: partial... }       // Streaming chunks
-// ├─ message_update  { message: partial... }
-// ├─ message_end     { message: assistantMessage } // Complete response
-// ├─ turn_end        { message, toolResults: [] }
-// └─ agent_end       { messages: [...] }

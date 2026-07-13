@@ -1,6 +1,8 @@
 import { initAuth } from './env-context.ts';
 import { agent } from './agent.ts';
+import { terminalIO } from './terminal-io.ts';
+import { Loop } from './loop.ts';
 
 await initAuth();
-
-await agent.prompt('Hello, how are you doing?');
+const loop = new Loop(terminalIO, agent);
+loop.start();
