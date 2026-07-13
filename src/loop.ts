@@ -1,4 +1,4 @@
-import { Agent, type AgentEvent } from '@earendil-works/pi-agent-core';
+import type { Agent, AgentEvent } from '@earendil-works/pi-agent-core';
 import { assertUnreachable, checkUnion } from './utils';
 import { debug } from './logger';
 import type { UserMessage } from '@earendil-works/pi-ai';
@@ -7,7 +7,7 @@ import type { UserMessage } from '@earendil-works/pi-ai';
 // an agent that it will call the interface of with the given client io
 
 export type UserIO = {
-  getUserInput: () => Promise<string>;
+  getUserInput: (signal: AbortSignal) => Promise<string>;
   pushModelOutput: (output: string) => Promise<void>;
 };
 
@@ -29,12 +29,15 @@ export class Loop {
     this.agent = agent;
   }
 
-  private modelOut(event: AgentEvent, _signal: AbortSignal): void {
+  private async modelOut(
+    event: AgentEvent,
+    _signal: AbortSignal
+  ): Promise<void> {
     if (event.type === 'agent_end') {
       const lastAssistantMessage = event.messages.at(-1);
       if (lastAssistantMessage?.role !== 'assistant') {
         debug(
-          `Last message is of type ${lastAssistantMessage?.role} rather than of type assistant at event agent_end, likely an abort. Skipping`
+          `Last message is of type ${String(lastAssistantMessage?.role)} rather than of type assistant at event agent_end, likely an abort. Skipping`
         );
         return;
       }
@@ -42,18 +45,18 @@ export class Loop {
       const textContent = lastAssistantMessage.content.at(-1);
       if (textContent?.type !== 'text') {
         debug(
-          `Last content in assistant message is of type ${textContent?.type} rather than of type text at event agent_end, likely an abort. Skipping`
+          `Last content in assistant message is of type ${String(textContent?.type)} rather than of type text at event agent_end, likely an abort. Skipping`
         );
         return;
       }
 
-      this.userIO.pushModelOutput(textContent.text);
+      await this.userIO.pushModelOutput(textContent.text);
     }
   }
 
   private async userIn(signal: AbortSignal): Promise<void> {
     while (!signal.aborted) {
-      const userInput = (await this.userIO.getUserInput()).trim();
+      const userInput = (await this.userIO.getUserInput(signal)).trim();
 
       const sep = ' ';
       const splitByWord = userInput.split(sep);
@@ -69,7 +72,7 @@ export class Loop {
 
       if (startWithCommandChar && command === null) {
         debug(
-          `Invalid user command ${commandWord}, expected one of ${validCommands}. Skipping`
+          `Invalid user command ${String(commandWord)}, expected one of ${validCommands.join(', ')}. Skipping`
         );
         continue;
       }
@@ -78,7 +81,7 @@ export class Loop {
         (command === null || doesCommandNeedMsg[command])
       ) {
         debug(
-          `User gave empty message for command ${commandWord}, message: ${message}. Skipping.`
+          `User gave empty message for command ${String(commandWord)}, message: ${message}. Skipping.`
         );
         continue;
       }
@@ -93,7 +96,7 @@ export class Loop {
         case null:
           this.agent.abort();
           await this.agent.waitForIdle();
-          this.agent.prompt(userMessage);
+          await this.agent.prompt(userMessage);
           break;
         case 'queue':
           this.agent.followUp(userMessage);

@@ -26,6 +26,7 @@ Handlers live in `../codex/codex-rs/core/src/tools/handlers/`; specs (the JSON t
 sees) are the `*_spec.rs` files. Extensions add more under `../codex/codex-rs/ext/*/src/tool.rs`.
 
 Execution:
+
 - `exec_command` — run a shell command, optionally in a PTY.
   `../codex/codex-rs/core/src/tools/handlers/shell.rs`,
   spec at `../codex/codex-rs/core/src/tools/handlers/shell_spec.rs`.
@@ -37,11 +38,13 @@ Execution:
   grammar `../codex/codex-rs/core/src/tools/handlers/apply_patch.lark`.
 
 Context and planning (`../codex/codex-rs/core/src/tools/handlers/`):
+
 - `plan` (`plan_spec.rs`), `get_context_remaining` (`get_context_remaining_spec.rs`),
   `new_context_window` (`new_context_window_spec.rs`), `current_time.rs`, `sleep.rs`,
   `wait_for_environment.rs`.
 
 Discovery and extension:
+
 - `tool_search` — deferred tools searched on demand.
   `../codex/codex-rs/core/src/tools/handlers/tool_search_spec.rs`.
 - `mcp` / `mcp_resource` — MCP tool calls and resource reads.
@@ -72,13 +75,14 @@ interface (`../pi/packages/agent/src/types.ts`). These coding-agent tools are pe
 reference and do not import them.
 
 Pi's `bash` tool (`../pi/packages/coding-agent/src/core/tools/bash.ts`):
+
 - name `bash`, param `command: string` (+ optional `timeout` seconds); schema at `bash.ts:41`,
   name/description at `bash.ts:299`.
 - description: "Execute a bash command in the current working directory. Returns stdout
   and stderr. Output is truncated to last N lines or KB (whichever is hit first). If
   truncated, full output is saved to a temp file."
 - stdio: `["ignore"|"pipe", "pipe", "pipe"]` at `bash.ts:101`; stdout and stderr both feed
-  the *same* `onData` handler at `bash.ts:124-125`, so they merge into one interleaved
+  the _same_ `onData` handler at `bash.ts:124-125`, so they merge into one interleaved
   buffer (no PTY).
 
 ## How Codex presents its exec tool to the model
@@ -104,7 +108,7 @@ Two things worth internalizing:
 
 1. **PTY is a per-call toggle, not always-on.** The description leads with "in a PTY," but
    the `tty` parameter (`shell_spec.rs:38-45`) defaults to plain pipes. Codex lets the
-   *model* decide when it wants a real terminal (e.g. for a program that needs `isatty`).
+   _model_ decide when it wants a real terminal (e.g. for a program that needs `isatty`).
    This refines the earlier read that "Codex always uses a PTY."
 2. **Output is budgeted in tokens, and capture is head+tail.** The PTY capture lives in
    `../codex/codex-rs/core/src/unified_exec/`. The model-facing text is
@@ -123,6 +127,7 @@ output comes back as one interleaved blob. No PTY yet, no ANSI stripping needed 
 child programs auto-disable color).
 
 Why start here:
+
 - **Simplest thing that works.** Pipes need no `openpty`, no master/slave fd management, no
   ANSI cleanup. Child programs see "not a tty" and emit plain, unbuffered-at-exit text.
 - **Interleaving loss is immaterial.** Two pipes into one handler is near-real ordering
@@ -140,6 +145,7 @@ ANSI actually earns its place. Bun's native `terminal` spawn option handles `ope
 exploring when we add the toggle. Keeping it out of the first cut.
 
 Deferred (matching Codex, not built yet):
+
 - Output budgeting: a token or line/byte cap with head+tail truncation and spill-to-file
   for the full transcript (Pi caps by lines/KB at `../pi/packages/coding-agent/src/core/tools/bash.ts:299`;
   Codex by tokens).
