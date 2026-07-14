@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "bun --watch src/index.ts",
-    "start": "source .env && bun run src/index.ts",
+    "start": "bun run src/index.ts",
     "test": "bun test --pass-with-no-tests",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
