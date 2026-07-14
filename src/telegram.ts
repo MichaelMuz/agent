@@ -1,10 +1,14 @@
 import { Bot, InlineKeyboard } from 'grammy';
+import { assert } from './utils';
+
+const telegramBotToken = process.env['TELEGRAM_BOT_TOKEN'];
+assert(telegramBotToken !== undefined, 'unpopulated TELEGRAM_BOT_TOKEN');
 
 //Store bot screaming status
 let screaming = false;
 
 //Create a new bot
-const bot = new Bot('<YOUR_BOT_TOKEN_HERE>');
+const bot = new Bot(telegramBotToken);
 
 //This function handles the /scream command
 bot.command('scream', () => {
