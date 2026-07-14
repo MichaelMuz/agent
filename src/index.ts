@@ -1,16 +1,13 @@
-// import { initAuth } from './env-context.ts';
-// import { agent } from './agent.ts';
-// import { terminalIO } from './terminal-io.ts';
-// import { Loop } from './loop.ts';
-import { bot } from './telegram.ts';
+import { initAuth } from './env-context.ts';
+import { agent } from './agent.ts';
+import { terminalIO } from './terminal-io.ts';
+import { Loop } from './loop.ts';
 
-// const controller = new AbortController();
-// process.on('SIGINT', () => {
-//   controller.abort();
-// });
+const controller = new AbortController();
+process.on('SIGINT', () => {
+  controller.abort();
+});
 
-// await initAuth();
-// const loop = new Loop(terminalIO, agent);
-// await loop.start(controller.signal);
-
-bot.start();
+await initAuth();
+const loop = new Loop(terminalIO, agent);
+await loop.start(controller.signal);
