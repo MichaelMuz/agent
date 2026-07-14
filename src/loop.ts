@@ -93,7 +93,7 @@ export class Loop {
       case null:
         this.agent.abort();
         await this.agent.waitForIdle();
-        this.agent.prompt(userMessage);
+        this.agent.prompt(userMessage).catch();
         break;
       case 'queue':
         this.agent.followUp(userMessage);
@@ -125,7 +125,6 @@ export class Loop {
       // that is bc we are the only aborters for now so skip wiring a new controller/signal through here into telegram
       this.handleUserIn(message, signal)
     );
-    this.userIO.start();
 
     await new Promise<void>((resolve) => {
       signal.addEventListener('abort', () => resolve(), { once: true });

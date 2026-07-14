@@ -21,14 +21,12 @@ export class TelegramIO {
     this.telegram = new Bot(telegramBotToken);
   }
 
-  // idk how we want abort to act here just cancel everything in flight?
-
   subscribe(listener: (message: string) => void) {
     this.telegram.on('message', async (ctx) => {
       assert('text' in ctx.message, 'Can only handle text messages for now');
       listener(ctx.message.text);
     });
-
+    this.telegram.start();
     return () => {
       this.telegram.stop();
     };
