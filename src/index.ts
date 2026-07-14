@@ -1,7 +1,8 @@
 import { initAuth } from './env-context.ts';
 import { agent } from './agent.ts';
-import { terminalIO } from './terminal-io.ts';
+// import { terminalIO } from './terminal-io.ts';
 import { Loop } from './loop.ts';
+import { loadTelegramEnv, TelegramIO } from './telegram-io.ts';
 
 const controller = new AbortController();
 process.on('SIGINT', () => {
@@ -9,5 +10,9 @@ process.on('SIGINT', () => {
 });
 
 await initAuth();
-const loop = new Loop(terminalIO, agent);
+
+const telegramEnv = loadTelegramEnv();
+const telegramIO = new TelegramIO(...telegramEnv);
+
+const loop = new Loop(telegramIO, agent);
 await loop.start(controller.signal);
