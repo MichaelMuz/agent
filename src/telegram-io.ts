@@ -30,24 +30,21 @@ export class TelegramIO {
     });
 
     return () => {
-      this.telegram.stop;
+      this.telegram.stop();
     };
   }
 
-  async sendMessage(message: string) {
-    return this.telegram.api.sendMessage(this.telegramChatId, message);
+  async sendMessage(message: string, signal: AbortSignal) {
+    return this.telegram.api.sendMessage(
+      this.telegramChatId,
+      message,
+      undefined,
+      // they use some weird old import of a signal so just case it, same shape
+      signal as Parameters<typeof this.telegram.api.sendMessage>[3]
+    );
   }
 
   start() {
     this.telegram.start();
   }
 }
-
-// export const telegramIO = {
-//   pushUserInput: async (signal: AbortSignal) => {
-//     return '';
-//   },
-//   pushModelOutput: (output: string) => {
-//     telegram.api.sendMessage(output);
-//   },
-// };

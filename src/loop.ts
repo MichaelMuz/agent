@@ -5,7 +5,7 @@ import type { TelegramIO } from './telegram-io';
 import type { UserMessage } from '@earendil-works/pi-ai';
 
 // This loop is the connector between the agent and the user interface
-// it accepts pushes from both the agent and the user
+// it subscribes to messages they both push in and requires an method to push messages out
 
 const validCommands = ['queue', 'steer', 'stop', 'clear', 'exit'] as const;
 type Command = (typeof validCommands)[number];
@@ -27,7 +27,7 @@ export class Loop {
 
   private async handleModelOut(
     event: AgentEvent,
-    _signal: AbortSignal
+    signal: AbortSignal
   ): Promise<void> {
     if (event.type === 'agent_end') {
       const lastAssistantMessage = event.messages.at(-1);
@@ -46,7 +46,7 @@ export class Loop {
         return;
       }
 
-      await this.userIO.sendMessage(textContent.text);
+      await this.userIO.sendMessage(textContent.text, signal);
     }
   }
 
