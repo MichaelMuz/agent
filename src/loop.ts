@@ -50,7 +50,11 @@ export class Loop {
     }
   }
 
-  private async handleUserIn(userInput: string): Promise<void> {
+  private async handleUserIn(
+    userInput: string,
+    // not used now but eventually can race the awaits we do on the agent so we can stop early
+    _signal: AbortSignal
+  ): Promise<void> {
     const sep = ' ';
     const splitByWord = userInput.split(sep);
 
@@ -117,8 +121,11 @@ export class Loop {
       this.handleModelOut(event, abort)
     );
     const telegramUnsubscribe = this.userIO.subscribe((message) =>
-      this.handleUserIn(message)
+      // asymmetry here in that the signal is from us not the subscribe callback
+      // that is bc we are the only aborters for now so skip wiring a new controller/signal through here into telegram
+      this.handleUserIn(message, signal)
     );
+    this.userIO.start();
 
     await new Promise<void>((resolve) => {
       signal.addEventListener('abort', () => resolve(), { once: true });
