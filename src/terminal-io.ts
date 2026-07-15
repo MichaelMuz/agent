@@ -1,14 +1,27 @@
-// import { type UserIO } from './loop.ts';
-// import { createInterface } from 'node:readline/promises';
+import type { Interface } from 'node:readline';
+import { cursorTo, clearLine } from 'node:readline';
+import { createInterface } from 'node:readline/promises';
 
-// const rl = createInterface({ input: process.stdin, output: process.stdout });
+export class terminalIO {
+  rl: Interface;
+  constructor(rl: Interface) {
+    this.rl = createInterface({ input: process.stdin, output: process.stdout });
+  }
 
-// export const terminalIO: UserIO = {
-//   getUserInput: async (signal: AbortSignal) =>
-//     await rl.question('> ', { signal }),
-//   pushModelOutput: (output: string) => {
-//     console.log(output);
-//     // suspicious shape? Did I make wrong interface?
-//     return Promise.resolve();
-//   },
-// };
+  subscribe(listener: (message: string) => void): () => void {
+    const controller = new AbortController();
+    this.rl.question('> ', { signal: controller.signal }, (userInput) => {
+      listener(userInput);
+    });
+    return () => {
+      controller.abort();
+    };
+  }
+
+  async sendMessage(message: string, signal: AbortSignal) {
+    cursorTo(process.stdout, 0);
+    clearLine(process.stdout, 0);
+    console.log(message);
+    this.rl.prompt(true);
+  }
+}

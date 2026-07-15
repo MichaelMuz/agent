@@ -21,7 +21,7 @@ export class TelegramIO {
     this.telegram = new Bot(telegramBotToken);
   }
 
-  subscribe(listener: (message: string) => void) {
+  subscribe(listener: (message: string) => void): () => void {
     this.telegram.on('message', async (ctx) => {
       assert('text' in ctx.message, 'Can only handle text messages for now');
       listener(ctx.message.text);
@@ -32,17 +32,13 @@ export class TelegramIO {
     };
   }
 
-  async sendMessage(message: string, signal: AbortSignal) {
-    return this.telegram.api.sendMessage(
+  async sendMessage(message: string, signal: AbortSignal): Promise<void> {
+    await this.telegram.api.sendMessage(
       this.telegramChatId,
       message,
       undefined,
-      // they use some weird old import of a signal so just case it, same shape
+      // they use some weird old import of a signal so just cast it, same shape
       signal as Parameters<typeof this.telegram.api.sendMessage>[3]
     );
-  }
-
-  start() {
-    this.telegram.start();
   }
 }
