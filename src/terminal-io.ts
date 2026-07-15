@@ -4,7 +4,7 @@ import { createInterface } from 'node:readline/promises';
 
 export class terminalIO {
   rl: Interface;
-  constructor(rl: Interface) {
+  constructor() {
     this.rl = createInterface({ input: process.stdin, output: process.stdout });
   }
 
@@ -18,10 +18,11 @@ export class terminalIO {
     };
   }
 
-  async sendMessage(message: string, signal: AbortSignal) {
+  sendMessage(message: string, _signal: AbortSignal): Promise<void> {
     cursorTo(process.stdout, 0);
     clearLine(process.stdout, 0);
     console.log(message);
     this.rl.prompt(true);
+    return Promise.resolve();
   }
 }
