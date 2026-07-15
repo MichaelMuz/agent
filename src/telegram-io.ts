@@ -21,14 +21,15 @@ export class TelegramIO {
     this.telegram = new Bot(telegramBotToken);
   }
 
-  subscribe(listener: (message: string) => void): () => void {
+  subscribe(listener: (message: string) => Promise<void>): () => void {
     this.telegram.on('message', async (ctx) => {
       assert('text' in ctx.message, 'Can only handle text messages for now');
-      listener(ctx.message.text);
+      await listener(ctx.message.text);
     });
-    this.telegram.start();
+    // Don't know how to handle a failure here yet
+    void this.telegram.start();
     return () => {
-      this.telegram.stop();
+      void this.telegram.stop();
     };
   }
 

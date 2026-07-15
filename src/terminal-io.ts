@@ -9,14 +9,14 @@ export class terminalIO {
     this.rl = createInterface({ input: process.stdin, output: process.stdout });
   }
 
-  subscribe(listener: (message: string) => void): () => void {
+  subscribe(listener: (message: string) => Promise<void>): () => void {
     const controller = new AbortController();
 
     (async (signal: AbortSignal) => {
       while (!signal.aborted) {
         const userInput = await this.rl
           .question('> ', { signal })
-          .catch((e) => {
+          .catch((e: unknown) => {
             if (e instanceof Error && e.name === 'AbortError') return null;
             throw e;
           });
@@ -25,11 +25,11 @@ export class terminalIO {
           break;
         }
 
-        listener(userInput);
+        await listener(userInput);
       }
-    })(controller.signal).catch((reason) =>
-      error('User input loop failed. Reason', reason)
-    );
+    })(controller.signal).catch((e: unknown) => {
+      error('User input loop failed. Error:', e);
+    });
 
     return () => {
       controller.abort();

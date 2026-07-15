@@ -93,7 +93,8 @@ export class Loop {
       case null:
         this.agent.abort();
         await this.agent.waitForIdle();
-        this.agent.prompt(userMessage).catch();
+        // Don't know how to handle a failure here yet
+        void this.agent.prompt(userMessage);
         break;
       case 'queue':
         this.agent.followUp(userMessage);
@@ -127,7 +128,13 @@ export class Loop {
     );
 
     await new Promise<void>((resolve) => {
-      signal.addEventListener('abort', () => resolve(), { once: true });
+      signal.addEventListener(
+        'abort',
+        () => {
+          resolve();
+        },
+        { once: true }
+      );
     });
     agentUnsubscribe();
     telegramUnsubscribe();
