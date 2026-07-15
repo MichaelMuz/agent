@@ -1,8 +1,8 @@
-import { initAuth } from './env-context.ts';
-import { agent } from './agent.ts';
-// import { terminalIO } from './terminal-io.ts';
+import { initAuth } from './agent/provider-auth.ts';
+import { agent } from './agent/agent.ts';
+// import { TerminalIO } from './user-io/terminal.ts';
 import { Loop } from './loop.ts';
-import { loadTelegramEnv, TelegramIO } from './telegram-io.ts';
+import { loadTelegramEnv, TelegramIO } from './user-io/telegram.ts';
 
 const controller = new AbortController();
 process.on('SIGINT', () => {

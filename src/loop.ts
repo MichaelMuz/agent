@@ -1,7 +1,7 @@
 import type { Agent, AgentEvent } from '@earendil-works/pi-agent-core';
-import { assertUnreachable, checkUnion } from './utils';
-import { debug } from './logger';
-import type { TelegramIO } from './telegram-io';
+import { assertUnreachable, checkUnion } from './helpers/utils.ts';
+import { debug } from './helpers/logger.ts';
+import type { UserIO } from './user-io/interface.ts';
 import type { UserMessage } from '@earendil-works/pi-ai';
 
 // This loop is the connector between the agent and the user interface
@@ -18,9 +18,9 @@ const doesCommandNeedMsg: Record<Command, boolean> = {
 };
 
 export class Loop {
-  userIO: TelegramIO;
+  userIO: UserIO;
   agent: Agent;
-  constructor(userIO: TelegramIO, agent: Agent) {
+  constructor(userIO: UserIO, agent: Agent) {
     this.userIO = userIO;
     this.agent = agent;
   }

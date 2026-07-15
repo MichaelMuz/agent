@@ -1,5 +1,6 @@
 import { Bot } from 'grammy';
-import { assert } from './utils';
+import { assert } from '../helpers/utils.ts';
+import type { UserIO } from './interface.ts';
 
 export function loadTelegramEnv() {
   const telegramBotToken = process.env['TELEGRAM_BOT_TOKEN'];
@@ -11,7 +12,7 @@ export function loadTelegramEnv() {
   return [telegramBotToken, telegramChatId] as const;
 }
 
-export class TelegramIO {
+export class TelegramIO implements UserIO {
   telegramBotToken: string;
   telegramChatId: string;
   telegram: Bot;
@@ -23,7 +24,10 @@ export class TelegramIO {
 
   subscribe(listener: (message: string) => Promise<void>): () => void {
     this.telegram.on('message', async (ctx) => {
-      assert('text' in ctx.message, 'Can only handle text messages for now');
+      assert(
+        ctx.message.text !== undefined,
+        'Can only handle text messages for now'
+      );
       await listener(ctx.message.text);
     });
     // Don't know how to handle a failure here yet

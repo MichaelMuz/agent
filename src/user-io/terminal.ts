@@ -1,9 +1,10 @@
 import type { Interface } from 'node:readline/promises';
 import { cursorTo, clearLine } from 'node:readline';
 import { createInterface } from 'node:readline/promises';
-import { error } from './logger';
+import { error } from '../helpers/logger.ts';
+import type { UserIO } from './interface.ts';
 
-export class terminalIO {
+export class TerminalIO implements UserIO {
   rl: Interface;
   constructor() {
     this.rl = createInterface({ input: process.stdin, output: process.stdout });
