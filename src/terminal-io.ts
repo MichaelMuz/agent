@@ -1,6 +1,7 @@
-import type { Interface } from 'node:readline';
+import type { Interface } from 'node:readline/promises';
 import { cursorTo, clearLine } from 'node:readline';
 import { createInterface } from 'node:readline/promises';
+import { error } from './logger';
 
 export class terminalIO {
   rl: Interface;
@@ -10,9 +11,26 @@ export class terminalIO {
 
   subscribe(listener: (message: string) => void): () => void {
     const controller = new AbortController();
-    this.rl.question('> ', { signal: controller.signal }, (userInput) => {
-      listener(userInput);
-    });
+
+    (async (signal: AbortSignal) => {
+      while (!signal.aborted) {
+        const userInput = await this.rl
+          .question('> ', { signal })
+          .catch((e) => {
+            if (e instanceof Error && e.name === 'AbortError') return null;
+            throw e;
+          });
+
+        if (userInput === null) {
+          break;
+        }
+
+        listener(userInput);
+      }
+    })(controller.signal).catch((reason) =>
+      error('User input loop failed. Reason', reason)
+    );
+
     return () => {
       controller.abort();
     };
