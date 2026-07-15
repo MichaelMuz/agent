@@ -8,7 +8,6 @@ You are currently in an experimental agentic harness. Respond mostly with anythi
 `;
 
 export const agent = new Agent({
-  // Initial state
   initialState: {
     systemPrompt,
     model: getBuiltinModel('openai-codex', 'gpt-5.4-mini'),

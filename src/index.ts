@@ -9,6 +9,6 @@ process.on('SIGINT', () => {
 });
 
 await initAuth();
-const userIO = makeUserIO('terminal');
+const userIO = makeUserIO('telegram');
 const loop = new Loop(userIO, agent);
 await loop.start(controller.signal);
